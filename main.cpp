@@ -57,6 +57,8 @@ void test_pair(void) {
     assert(pair1 == pair3);
     assert(pair1 != pair2);
     assert(pair1 <= pair3);
+
+    println("pair1={}", pair1);
 }
 
 int main(void) {

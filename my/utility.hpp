@@ -2,6 +2,8 @@
 #include <print>
 #include <type_traits>
 #include <utility>
+#include <format>
+#include <string_view>
 
 namespace my {
 
@@ -130,4 +132,18 @@ constexpr auto operator<=>(const pair<T1, T2>& lhs, const pair<U1, U2>& rhs) {
     if (auto c = lhs.first <=> rhs.first; c != 0) return c;
     return lhs.second <=> rhs.second;
 }
+
 } // namespace my
+
+namespace std {
+
+template <class T1, class T2>
+struct formatter<my::pair<T1, T2>> : formatter<string_view> {
+    auto format(const my::pair<T1, T2>& p, format_context& ctx) const {
+        string buf;
+        format_to(back_inserter(buf), "({}, {})", p.first, p.second);
+        return formatter<string_view>::format(string_view{buf}, ctx);
+    }
+};
+
+} // namespace std
