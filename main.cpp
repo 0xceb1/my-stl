@@ -5,8 +5,19 @@
 #include <cassert>
 #include "my/memory.hpp"
 #include "my/utility.hpp"
+#include "my/vector.hpp"
 
 using std::println;
+
+void test_allocator(void);
+void test_pair(void);
+void test_vector(void);
+
+int main(void) {
+    // test_allocator();
+    // test_pair();
+    test_vector();
+}
 
 void test_allocator(void) {
     using std::string;
@@ -61,7 +72,23 @@ void test_pair(void) {
     println("pair1={}", pair1);
 }
 
-int main(void) {
-    // test_allocator();
-    test_pair();
+void test_vector(void) {
+    using std::string;
+    using MyVec = my::vector<string, my::allocator<string>>;
+
+    auto my_alloc = my::allocator<string>();
+    MyVec vec1{my_alloc};
+    vec1.show();
+
+    MyVec vec2{10, "urmom", my_alloc};
+    vec2.show();    
+
+    MyVec vec3{vec2.begin(), vec2.end()};
+    vec3.show();
+
+    MyVec vec4 = std::move(vec3);
+    vec4.show();
+
+    my::vector<int> vec5 = {1, 2, 3, 4, 5};
+    vec5.show();
 }
