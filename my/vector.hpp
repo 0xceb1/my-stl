@@ -3,11 +3,13 @@
 #include <iterator>
 #include <memory>
 #include <print>
+#include <stdexcept>
 #include "memory.hpp"
 #include "utility.hpp"
 
 #define DEFAULT_INIT_SIZE 0
 #define MAX_SIZE (1024 * 1024 * 1024)
+#define REALLOCATION_FACTOR 2
 
 namespace my {
 template<
@@ -102,11 +104,43 @@ public:
     // destructor
     constexpr ~vector() {
         std::destroy(begin(), end());
-        m_alloc.deallocate(my::exchange(m_st, nullptr), m_cap);
+        m_alloc.deallocate(my::exchange(m_st, nullptr));
         m_sz = m_cap = 0;
     }
 
     // element access
+    constexpr reference at(size_type pos) {
+        if (pos >= m_sz) {
+            throw std::out_of_range("Index out of range");
+        } else {
+            return m_st[pos];
+        }
+    }
+
+    constexpr reference operator[](size_type pos) {
+        return m_st[pos];
+    }
+
+    constexpr const_reference operator[](size_type pos) const {
+        return m_st[pos];
+    }
+
+    constexpr reference front() {
+        return m_st[0];
+    }
+
+    constexpr const_reference front() const {
+        return m_st[0];
+    }
+
+    constexpr reference back() {
+        return m_st[m_sz - 1];
+    }
+
+    constexpr const_reference back() const {
+        return m_st[m_sz - 1];
+    }
+
     constexpr pointer data() noexcept {
         return m_st;
     }
@@ -176,9 +210,78 @@ public:
         return MAX_SIZE;
     }
 
+    void reserve(size_type new_cap) {
+        if (new_cap > MAX_SIZE) {
+            throw std::length_error("Try to allocate space larger than max_size()");
+        } else if (new_cap > m_cap) {
+            pointer new_data = m_alloc.allocate(new_cap);
+            std::uninitialized_move(begin(), end(), new_data);
+            std::destroy(begin(), end());
+            m_alloc.deallocate(m_st);
+            m_st = new_data;
+            m_cap = new_cap;
+        } else {
+            return;
+        }
+    }
+
+    constexpr void shrink_to_fit() {
+        if (m_sz == m_cap) {
+            return;
+        } else if (m_sz == 0){
+            std::destroy(begin(), end());
+            m_alloc.deallocate(m_st);
+            m_st = nullptr;
+            m_cap = 0;
+        } else {
+            pointer new_data = m_alloc.allocate(m_sz);
+            std::uninitialized_move(begin(), end(), new_data);
+            std::destroy(begin(), end());
+            m_alloc.deallocate(m_st);
+            m_st = new_data;
+            m_cap = m_sz;
+        }
+    }
+
     constexpr size_type capacity() const noexcept {
         return m_cap;
     }
 
+    // modifiers
+    constexpr void clear() noexcept {
+        std::destroy(begin(), end());
+        m_sz = 0;
+    }
+
+    constexpr void push_back(const_reference value) { emplace_back(value); }
+
+    constexpr void push_back(value_type &&value) {
+        emplace_back(std::move(value));
+    }
+
+    template<class... Args>
+    constexpr reference emplace_back(Args&&... args) {
+        if (m_sz == m_cap) {
+            size_type new_cap = (m_cap == 0) ? 1 : REALLOCATION_FACTOR * m_cap;
+            reserve(new_cap);
+        }
+        return *std::construct_at(m_st + (m_sz++), std::forward<Args>(args)...);
+    }
+
+    constexpr void pop_back() {
+        if (empty()) {
+            return;
+        }
+        std::destroy_at(m_st + m_sz - 1);
+        m_sz--;
+    }
+
+    constexpr void swap(vector &other) noexcept {
+        if (this != &other) {
+            std::swap(m_st, other.m_st);
+            std::swap(m_sz, other.m_sz);
+            std::swap(m_cap, other.m_cap);
+        }
+    }
 }; // class vector
 } // namespace my

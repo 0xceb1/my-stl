@@ -91,4 +91,16 @@ void test_vector(void) {
 
     my::vector<int> vec5 = {1, 2, 3, 4, 5};
     vec5.show();
+
+    println("Expected 5, got {}", vec5.at(4));
+    println("Expected 5, got {}", vec5[4]);
+    println("UB {}", vec5[100]);
+    try {
+        vec5.at(100);
+    } catch (const std::out_of_range& e) {
+        println("Exception caught: {}", e.what());
+    }
+
+    vec5.push_back(6);
+    vec5.show();
 }
