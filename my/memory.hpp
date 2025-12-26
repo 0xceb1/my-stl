@@ -14,9 +14,9 @@ public:
 
     // constructors
     constexpr allocator() noexcept = default;
-    constexpr allocator(const allocator& other) noexcept : allocator() {}
+    constexpr allocator(const allocator&) noexcept : allocator() {}
     template<class U>
-    constexpr allocator(const allocator<U>& other) noexcept : allocator() {}
+    constexpr allocator(const allocator<U>&) noexcept : allocator() {}
     // destructor
     constexpr ~allocator() = default;
 
@@ -35,7 +35,7 @@ public:
 }; // class allocator
 
 template< class T1, class T2 >
-constexpr bool operator==( const allocator<T1>& lhs, const allocator<T2>& rhs ) noexcept {
+constexpr bool operator==( const allocator<T1>&, const allocator<T2>&) noexcept {
     return true;
 }
 } // namespace my
