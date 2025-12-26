@@ -8,8 +8,7 @@
 namespace my {
 
 template<class T1, class T2>
-class pair {
-public:
+struct pair {
     T1 first;
     T2 second;
     // For debug purpose only
