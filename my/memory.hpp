@@ -28,6 +28,10 @@ public:
     allocate_at_least(size_type n) {
         return { allocate(n), n };
     }
+    
+    constexpr void deallocate(T* p) {
+        ::operator delete(p);
+    }
 
     constexpr void deallocate(T* p, size_type n) {
         ::operator delete(p, n * sizeof(T));
