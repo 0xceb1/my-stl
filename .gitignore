@@ -3,5 +3,7 @@ build
 target
 *.dSYM
 
+.clangd
+
 .vscode
 .idea
