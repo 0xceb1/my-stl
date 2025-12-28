@@ -31,7 +31,7 @@ void test_allocator(void) {
         new(p_st + i) string{"urmom"};
     }
 
-    
+
     for (size_t i = 0; i < n; ++i) {
         println("i={}, {}", i, p_st[i]);
     }
@@ -81,7 +81,7 @@ void test_vector(void) {
     vec1.show();
 
     MyVec vec2{10, "urmom", my_alloc};
-    vec2.show();    
+    vec2.show();
 
     MyVec vec3{vec2.begin(), vec2.end()};
     vec3.show();
@@ -102,5 +102,9 @@ void test_vector(void) {
     }
 
     vec5.push_back(6);
+    vec5.show();
+    // vec5.shrink_to_fit();
+
+    vec5.insert(vec5.end(), 42);
     vec5.show();
 }

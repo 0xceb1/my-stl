@@ -7,7 +7,6 @@
 #include "memory.hpp"
 #include "utility.hpp"
 
-#define DEFAULT_INIT_SIZE 0
 #define MAX_SIZE (1024 * 1024 * 1024)
 #define REALLOCATION_FACTOR 2
 
@@ -44,16 +43,16 @@ public:
         std::println("]");
         std::println("m_st: {}, m_sz: {}, m_cap: {}", static_cast<void*>(begin()), size(), capacity());
     }
-    
+
     // constructors
     constexpr vector() : vector(Allocator()) {}
-    
+
     constexpr explicit vector(const Allocator& alloc) noexcept :
-        m_st{nullptr}, m_sz{DEFAULT_INIT_SIZE}, m_cap{DEFAULT_INIT_SIZE}, m_alloc{alloc}
+        m_st{nullptr}, m_sz{0}, m_cap{0}, m_alloc{alloc}
     {
-        m_st = m_alloc.allocate(DEFAULT_INIT_SIZE);
+        m_st = m_alloc.allocate(0};
     }
-    
+
     explicit vector(size_type count, const Allocator& alloc = Allocator()) :
         m_st{nullptr}, m_sz{count}, m_cap{count}, m_alloc(alloc)
     {
@@ -253,6 +252,29 @@ public:
         m_sz = 0;
     }
 
+    constexpr iterator insert(const_iterator pos, const_reference value) {
+        size_type offset = std::distance(cbegin(), pos);
+        if (m_sz == m_cap) {
+            size_type new_cap = (m_cap == 0) ? 1 : REALLOCATION_FACTOR * m_cap;
+            pointer new_st = m_alloc.allocate(new_cap);
+            std::uninitialized_move(begin(), begin() + offset - 1, new_st);
+            std::construct_at(new_st+offset, value);
+            std::uninitialized_move(begin() + offset, end(), new_st + offset + 1);
+            std::destroy(begin(), end());
+            m_alloc.deallocate(m_st);
+            m_st = new_st;
+            m_cap = new_cap;
+        } else if (pos == cend()) {
+            std::construct_at(end(), value);
+        } else {
+            std::construct_at(end(), std::move(back()));
+            std::move_backward(begin() + offset, end() - 1, end());
+            *(m_st + offset) = value;
+        }
+        m_sz++;
+        return m_st + offset;
+    }
+
     constexpr void push_back(const_reference value) { emplace_back(value); }
 
     constexpr void push_back(value_type &&value) {
@@ -265,7 +287,7 @@ public:
             size_type new_cap = (m_cap == 0) ? 1 : REALLOCATION_FACTOR * m_cap;
             reserve(new_cap);
         }
-        return *std::construct_at(m_st + (m_sz++), std::forward<Args>(args)...);
+        return *std::construct_at(m_st + (m_sz++), args...);
     }
 
     constexpr void pop_back() {
