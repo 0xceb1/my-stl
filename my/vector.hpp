@@ -287,7 +287,7 @@ public:
             size_type new_cap = (m_cap == 0) ? 1 : REALLOCATION_FACTOR * m_cap;
             reserve(new_cap);
         }
-        return *std::construct_at(m_st + (m_sz++), args...);
+        return *std::construct_at(m_st + (m_sz++), std::forward<Args>(args)...);
     }
 
     constexpr void pop_back() {
