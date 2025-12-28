@@ -50,7 +50,7 @@ public:
     constexpr explicit vector(const Allocator& alloc) noexcept :
         m_st{nullptr}, m_sz{0}, m_cap{0}, m_alloc{alloc}
     {
-        m_st = m_alloc.allocate(0};
+        m_st = m_alloc.allocate(0);
     }
 
     explicit vector(size_type count, const Allocator& alloc = Allocator()) :
