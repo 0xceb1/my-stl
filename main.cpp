@@ -6,17 +6,20 @@
 #include "my/memory.hpp"
 #include "my/utility.hpp"
 #include "my/vector.hpp"
+#include "my/optional.hpp"
 
 using std::println;
 
 void test_allocator(void);
 void test_pair(void);
 void test_vector(void);
+void test_optional(void);
 
 int main(void) {
     // test_allocator();
     // test_pair();
-    test_vector();
+    // test_vector();
+    test_optional();
 }
 
 void test_allocator(void) {
@@ -107,4 +110,26 @@ void test_vector(void) {
 
     vec5.insert(vec5.end(), 42);
     vec5.show();
+}
+
+void test_optional(void) {
+    using std::string;
+    using my::optional;
+
+    optional<string> some_str {"hello world"};
+    optional<string> none {};
+    string str {"hellow world"};
+
+    println("{}, {}", some_str.has_value(), none.has_value());
+    println("{}, {}", some_str.value_or("wtf"), none.value_or("wtf"));
+
+    println("sizeof some={}, sizeof none={}, sizeof str={}", sizeof(some_str), sizeof(none), sizeof(str));
+    optional<string> move_to = std::move(some_str);
+    println("{}, {}", some_str.has_value(), move_to.has_value());
+    println("{}, {}", some_str.value_or("wtf"), move_to.value_or("wtf"));
+
+    optional<string> copy_to = move_to;
+    println("{}, {}", move_to.has_value(), copy_to.has_value());
+    println("{}, {}", move_to.value_or("wtf"), copy_to.value_or("wtf"));
+
 }
