@@ -135,4 +135,20 @@ void test_optional(void) {
     none.swap(move_to);
     println("{}, {}", move_to.has_value(), none.has_value());
     println("{}, {}", move_to.value_or("wtf"), none.value_or("wtf"));
+
+    auto res = copy_to \
+        .and_then([](string s) {
+            assert(s == "hello world");
+            return optional<string> {"foo"};
+        }) \
+        .transform([](string s) -> string {
+            assert(s == "foo");
+            return "bar";
+        }) \
+        .or_else([]() -> string {
+            assert(false);
+            return "unreachable";
+        });
+
+    println("{}", res.value_or("wtf"));
 }

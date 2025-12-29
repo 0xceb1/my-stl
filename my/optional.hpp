@@ -7,6 +7,9 @@
 #include <utility>
 
 namespace my {
+
+namespace {
+
 template<class T, class U>
 concept can_construct_from_optional =
     std::is_constructible_v<T, std::optional<U>&> ||
@@ -27,6 +30,8 @@ concept can_assign_from_optional =
     std::is_assignable_v<T&, const std::optional<U>&> ||
     std::is_assignable_v<T&, std::optional<U>&&> ||
     std::is_assignable_v<T&, const std::optional<U>&&>;
+
+} // anonymous namespace
 
 template <class T> class optional {
 public:
@@ -249,7 +254,85 @@ public:
     constexpr T value_or(U &&default_value) && {
         return m_is_some ? std::move(m_some) : static_cast<T>(std::forward<U>(default_value));
     }
+
     // monadic operations
+    template<class F>
+    constexpr auto and_then(F&& f) & {
+        if (m_is_some)
+            return std::invoke(std::forward<F>(f), m_some);
+        else
+            return std::remove_cvref_t<std::invoke_result_t<F, T&>>{};
+    }
+
+    template<class F>
+    constexpr auto and_then(F&& f) const& {
+        if (m_is_some)
+            return std::invoke(std::forward<F>(f), m_some);
+        else
+            return std::remove_cvref_t<std::invoke_result_t<F, const T&>>{};
+    }
+
+    template<class F>
+    constexpr auto and_then(F&& f) && {
+        if (m_is_some)
+            return std::invoke(std::forward<F>(f), std::move(m_some));
+        else
+            return std::remove_cvref_t<std::invoke_result_t<F, T>>{};
+    }
+
+    template<class F>
+    constexpr auto and_then(F&& f) const&& {
+        if (m_is_some)
+            return std::invoke(std::forward<F>(f), std::move(m_some));
+        else
+            return std::remove_cvref_t<std::invoke_result_t<F, const T>>{};
+    }
+
+    template<class F>
+    constexpr auto transform(F&& f) & {
+        using U = std::remove_cv_t<std::invoke_result_t<F, T&>>;
+        if (m_is_some)
+            return optional<U>{ std::invoke(std::forward<F>(f), m_some) };
+        else
+            return optional<U>{};
+    }
+
+    template<class F>
+    constexpr auto transform(F&& f) const& {
+        using U = std::remove_cv_t<std::invoke_result_t<F, T&>>;
+        if (m_is_some)
+            return optional<U>{ std::invoke(std::forward<F>(f), m_some) };
+        else
+            return optional<U>{};
+    }
+
+    template<class F>
+    constexpr auto transform(F&& f) && {
+        using U = std::remove_cv_t<std::invoke_result_t<F, T&>>;
+        if (m_is_some)
+            return optional<U>{ std::invoke(std::forward<F>(f), std::move(m_some)) };
+        else
+            return optional<U>{};
+    }
+
+    template<class F>
+    constexpr auto transform(F&& f) const&& {
+        using U = std::remove_cv_t<std::invoke_result_t<F, T&>>;
+        if (m_is_some)
+            return optional<U>{ std::invoke(std::forward<F>(f), std::move(m_some)) };
+        else
+            return optional<U>{};
+    }
+
+    template<class F>
+    constexpr optional or_else(F&& f) const& {
+        return m_is_some ? m_some : std::forward<F>(f)();
+    }
+
+    template<class F>
+    constexpr optional or_else(F&& f) && {
+        return m_is_some ? std::move(m_some) : std::forward<F>(f)();
+    }
 
     // modifiers
     constexpr void swap(optional& other) {
