@@ -1,9 +1,33 @@
 #include "utility.hpp"
 #include <cstddef>
+#include <cassert>
 #include <memory>
+#include <optional>
 #include <type_traits>
+#include <utility>
 
 namespace my {
+template<class T, class U>
+concept can_construct_from_optional =
+    std::is_constructible_v<T, std::optional<U>&> ||
+    std::is_constructible_v<T, const std::optional<U>&> ||
+    std::is_constructible_v<T, std::optional<U>&&> ||
+    std::is_constructible_v<T, const std::optional<U>&&>;
+
+template<class T, class U>
+concept can_convert_to_optional =
+    std::is_convertible_v<std::optional<U>&, T> ||
+    std::is_convertible_v<const std::optional<U>&, T> ||
+    std::is_convertible_v<std::optional<U>&&, T> ||
+    std::is_convertible_v<const std::optional<U>&&, T>;
+
+template<class T, class U>
+concept can_assign_from_optional =
+    std::is_assignable_v<T&, std::optional<U>&> ||
+    std::is_assignable_v<T&, const std::optional<U>&> ||
+    std::is_assignable_v<T&, std::optional<U>&&> ||
+    std::is_assignable_v<T&, const std::optional<U>&&>;
+
 template <class T> class optional {
 public:
     using value_type = T;
@@ -36,7 +60,9 @@ public:
 
     template <class U>
     constexpr optional(const optional<U> &other)
-        requires std::is_constructible_v<T, const U &>
+        requires std::is_constructible_v<T, const U &> &&
+                 (!can_construct_from_optional<T, U>) &&
+                 (!can_convert_to_optional<T, U>)
     : m_is_some{other.m_is_some} {
         if (m_is_some) {
             std::construct_at(std::addressof(m_some), other.m_some);
@@ -45,7 +71,9 @@ public:
 
     template <class U>
     constexpr optional(optional<U> &&other)
-        requires std::is_constructible_v<T, U>
+        requires std::is_constructible_v<T, U> &&
+                 (!can_construct_from_optional<T, U>) &&
+                 (!can_convert_to_optional<T, U>)
     : m_is_some{other.m_is_some} {
         if (m_is_some) {
             std::construct_at(std::addressof(m_some), std::move(other.m_some));
@@ -75,21 +103,196 @@ public:
         std::construct_at(std::addressof(m_some), std::move(value));
     }
 
+    // destructors
     constexpr ~optional() {
-        if (m_is_some) {
-            m_some.~T();
-            m_is_some = false;
-        }
+        reset();
     }
 
-    constexpr const T *operator->() const noexcept;
+    // copy assignment operator
+    constexpr optional& operator=(std::nullopt_t) noexcept {
+        reset();
+        return *this;
+    }
+
+    constexpr optional& operator=(const optional& other) {
+        if (other.m_is_some) {
+            m_some = other.m_some;
+            m_is_some = true;
+        } else {
+            reset();
+        }
+        return *this;
+    }
+
+    constexpr optional& operator=(optional&& other) noexcept {
+        if (other.m_is_some) {
+            m_some = std::move(other.m_some);
+            m_is_some = true;
+        } else {
+            reset();
+        }
+        return *this;
+    }
+
+    template<class U>
+    constexpr optional& operator=(const optional<U>& other)
+        requires std::is_constructible_v<T, const U&> &&
+                 std::is_assignable_v<T&, const U&> &&
+                 (!can_construct_from_optional<T, U>) &&
+                 (!can_convert_to_optional<T, U>) &&
+                 (!can_assign_from_optional<T, U>)
+    {
+        if (other.m_is_some) {
+            m_some = other.m_some;
+            m_is_some = true;
+        } else {
+            reset();
+        }
+        return *this;
+    }
+
+    template<class U>
+    constexpr optional& operator=(optional<U>&& other)
+        requires std::is_constructible_v<T, U> &&
+                 std::is_assignable_v<T&, U> &&
+                 (!can_construct_from_optional<T, U>) &&
+                 (!can_convert_to_optional<T, U>) &&
+                 (!can_assign_from_optional<T, U>)
+    {
+        if (other.m_is_some) {
+            m_some = std::move(other.m_some);
+            m_is_some = true;
+        } else {
+            reset();
+        }
+        return *this;
+    }
+
+    template<class U = std::remove_cv_t<T>>
+    constexpr optional& operator=(U&& value)
+        requires std::is_constructible_v<T, U> &&
+                 std::is_assignable_v<T&, U> &&
+                 (!std::same_as<std::remove_cvref_t<U>, std::optional<T>>)
+    {
+        m_some = std::forward<U>(value);
+        m_is_some = true;
+        return *this;
+    }
+
+    constexpr const T* operator->() const noexcept {
+        assert(m_is_some && "optional must hava a value to call -> operator");
+        return std::addressof(m_some);
+    }
+
+    constexpr T* operator->() noexcept {
+        assert(m_is_some && "optional must hava a value to call -> operator");
+        return std::addressof(m_some);
+    }
+
+    constexpr const T& operator*() const& noexcept {
+        assert(m_is_some && "optional must hava a value to call * operator");
+        return m_some;
+    }
+
+    constexpr T& operator*() & noexcept {
+        assert(m_is_some && "optional must hava a value to call * operator");
+        return m_some;
+    }
+
+    constexpr const T&& operator*() const&& noexcept {
+        assert(m_is_some && "optional must hava a value to call * operator");
+        return std::move(m_some);
+    }
+
+    constexpr T&& operator*() && noexcept {
+        assert(m_is_some && "optional must hava a value to call * operator");
+        return std::move(m_some);
+    }
+
     constexpr explicit operator bool() const noexcept { return m_is_some; }
     constexpr bool has_value() const noexcept { return m_is_some; }
+
+    constexpr T& value() & {
+        if (!m_is_some) {
+            throw std::bad_optional_access();
+        }
+        return m_some;
+    }
+
+    constexpr const T& value() const & {
+        if (!m_is_some) {
+            throw std::bad_optional_access();
+        }
+        return m_some;
+    }
+
+    constexpr T&& value() && {
+        if (!m_is_some) {
+            throw std::bad_optional_access();
+        }
+        return (m_some);
+
+    }
+    constexpr const T&& value() const && {
+        if (!m_is_some) {
+            throw std::bad_optional_access();
+        }
+        return std::move(m_some);
+    }
 
     template <class U = std::remove_cv_t<T>>
     constexpr T value_or(U &&default_value) const & {
         return m_is_some ? m_some : static_cast<T>(std::forward<U>(default_value));
     }
 
+    template <class U = std::remove_cv_t<T>>
+    constexpr T value_or(U &&default_value) && {
+        return m_is_some ? std::move(m_some) : static_cast<T>(std::forward<U>(default_value));
+    }
+    // monadic operations
+
+    // modifiers
+    constexpr void swap(optional& other) {
+        if (this != &other) {
+            if (m_is_some && other.m_is_some) {
+                std::swap(m_some, other.m_some);
+            } else if (!m_is_some && other.m_is_some) {
+                std::construct_at(std::addressof(m_some), std::move(other.m_some));
+                other.reset();
+                m_is_some = true;
+            } else if (m_is_some && !other.m_is_some) {
+                std::construct_at(std::addressof(other.m_some), std::move(m_some));
+                reset();
+                other.m_is_some = true;
+            } else { return; }
+        }
+    }
+
+    template<class... Args>
+    constexpr T& emplace(Args&&... args) {
+        if (m_is_some) {
+            m_some.~T();
+        }
+        std::construct_at(std::addressof(m_some), std::forward<Args>(args)...);
+        m_is_some = true;
+        return m_some;
+    }
+
+    template<class U, class... Args>
+    T& emplace(std::initializer_list<U> ilist, Args&&... args) {
+        if (m_is_some) {
+            m_some.~T();
+        }
+        std::construct_at(std::addressof(m_some), ilist, std::forward<Args>(args)...);
+        m_is_some = true;
+        return m_some;
+    }
+
+    constexpr void reset() noexcept {
+        if (m_is_some) {
+            m_some.~T();
+            m_is_some = false;
+        }
+    }
 }; // class optional
 } // namespace my

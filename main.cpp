@@ -132,4 +132,7 @@ void test_optional(void) {
     println("{}, {}", move_to.has_value(), copy_to.has_value());
     println("{}, {}", move_to.value_or("wtf"), copy_to.value_or("wtf"));
 
+    none.swap(move_to);
+    println("{}, {}", move_to.has_value(), none.has_value());
+    println("{}, {}", move_to.value_or("wtf"), none.value_or("wtf"));
 }
