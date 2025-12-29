@@ -1,4 +1,5 @@
 #include "utility.hpp"
+#include <concepts>
 #include <cstddef>
 #include <cassert>
 #include <memory>
@@ -235,7 +236,7 @@ public:
         if (!m_is_some) {
             throw std::bad_optional_access();
         }
-        return (m_some);
+        return std::move(m_some);
 
     }
     constexpr const T&& value() const && {
@@ -377,5 +378,76 @@ public:
             m_is_some = false;
         }
     }
+
+    // rusty methods
+    constexpr bool is_some() const { return m_is_some; }
+
+    template<class F>
+    constexpr bool is_some_and(F&& f) &
+        requires std::predicate<F, T&>
+    {
+        return m_is_some ? std::invoke(std::forward<F>(f), m_some) : false;
+    }
+
+    template<class F>
+    constexpr bool is_some_and(F&& f) const&
+        requires std::predicate<F, const T&>
+    {
+        return m_is_some ? std::invoke(std::forward<F>(f), m_some) : false;
+    }
+
+    template<class F>
+    constexpr bool is_some_and(F&& f) &&
+        requires std::predicate<F, T>
+    {
+        return m_is_some ? std::invoke(std::forward<F>(f), std::move(m_some)) : false;
+    }
+
+    template<class F>
+    constexpr bool is_some_and(F&& f) const&&
+        requires std::predicate<F, const T>
+    {
+        return m_is_some ? std::invoke(std::forward<F>(f), std::move(m_some)) : false;
+    }
+
+    constexpr bool is_none() const { return !m_is_some; }
+
+    template<class F>
+    constexpr bool is_none_or(F&& f) &
+        requires std::predicate<F, T&>
+    {
+        return (!m_is_some) ? true : std::invoke(std::forward<F>(f), m_some);
+    }
+
+    template<class F>
+    constexpr bool is_none_or(F&& f) const&
+        requires std::predicate<F, const T&>
+    {
+        return (!m_is_some) ? true : std::invoke(std::forward<F>(f), m_some);
+    }
+
+    template<class F>
+    constexpr bool is_none_or(F&& f) &&
+        requires std::predicate<F, T>
+    {
+        return (!m_is_some) ? true : std::invoke(std::forward<F>(f), std::move(m_some));
+    }
+
+    template<class F>
+    constexpr bool is_none_or(F&& f) const&&
+        requires std::predicate<F, const T>
+    {
+        return (!m_is_some) ? true : std::invoke(std::forward<F>(f), std::move(m_some));
+    }
+
+    constexpr T& unwrap() & { return value(); }
+    constexpr const T& unwrap() const & { return value(); }
+    constexpr T&& unwrap() && { return value(); }
+    constexpr const T&& unwrap() const && { return value(); }
+
+    constexpr T& unwrap_unchecked() & { return m_some; }
+    constexpr const T& unwrap_unchecked() const & { return m_some; }
+    constexpr T&& unwrap_unchecked() && { return std::move(m_some); }
+    constexpr const T&& unwrap_unchecked() const && { return std::move(m_some); }
 }; // class optional
 } // namespace my

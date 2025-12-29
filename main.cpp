@@ -120,35 +120,36 @@ void test_optional(void) {
     optional<string> none {};
     string str {"hellow world"};
 
-    println("{}, {}", some_str.has_value(), none.has_value());
-    println("{}, {}", some_str.value_or("wtf"), none.value_or("wtf"));
-
+    assert(some_str && (!none));
     println("sizeof some={}, sizeof none={}, sizeof str={}", sizeof(some_str), sizeof(none), sizeof(str));
+
     optional<string> move_to = std::move(some_str);
-    println("{}, {}", some_str.has_value(), move_to.has_value());
-    println("{}, {}", some_str.value_or("wtf"), move_to.value_or("wtf"));
+    assert(some_str && move_to);
 
     optional<string> copy_to = move_to;
-    println("{}, {}", move_to.has_value(), copy_to.has_value());
-    println("{}, {}", move_to.value_or("wtf"), copy_to.value_or("wtf"));
+    assert(move_to && copy_to);
 
     none.swap(move_to);
-    println("{}, {}", move_to.has_value(), none.has_value());
-    println("{}, {}", move_to.value_or("wtf"), none.value_or("wtf"));
+    assert((!move_to) && none);
+    assert(none.unwrap() == "hello world");
 
-    auto res = copy_to \
+    auto res = copy_to
         .and_then([](string s) {
             assert(s == "hello world");
             return optional<string> {"foo"};
-        }) \
+        })
         .transform([](string s) -> string {
             assert(s == "foo");
             return "bar";
-        }) \
+        })
         .or_else([]() -> string {
             assert(false);
             return "unreachable";
         });
 
-    println("{}", res.value_or("wtf"));
+    assert(res.unwrap() == "bar");
+
+    optional<int> some_int { 42 };
+    assert(some_int.is_some_and([](int x) { return x > 30; }));
+    assert((optional<int> {}).is_none_or([](int) { return false; }));
 }
