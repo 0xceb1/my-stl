@@ -152,4 +152,5 @@ void test_optional(void) {
     optional<int> some_int { 42 };
     assert(some_int.is_some_and([](int x) { return x > 30; }));
     assert((optional<int> {}).is_none_or([](int) { return false; }));
+    println("{}, {}, {}", some_int, res, move_to);
 }

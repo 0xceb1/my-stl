@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <type_traits>
+#include <format>
 #include <utility>
 
 namespace my {
@@ -451,3 +452,23 @@ public:
     constexpr const T&& unwrap_unchecked() const && { return std::move(m_some); }
 }; // class optional
 } // namespace my
+
+namespace std {
+
+template <class T>
+struct formatter<my::optional<T>> {
+    constexpr auto parse(format_parse_context& ctx) {
+        return ctx.begin();
+    }
+
+    auto format(const my::optional<T>& p, format_context& ctx) const {
+        if (p.has_value()) {
+            return format_to(ctx.out(), "Some({})", p.unwrap_unchecked());
+        } else {
+            return format_to(ctx.out(), "None");
+        }
+    }
+};
+
+
+} // namespace std
