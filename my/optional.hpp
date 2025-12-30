@@ -10,28 +10,33 @@
 
 namespace my {
 
+template <class T> class optional;
+
 namespace {
+
+template<typename T>
+concept is_bool = std::same_as<std::remove_cv_t<T>, bool>;
 
 template<class T, class U>
 concept can_construct_from_optional =
-    std::is_constructible_v<T, std::optional<U>&> ||
-    std::is_constructible_v<T, const std::optional<U>&> ||
-    std::is_constructible_v<T, std::optional<U>&&> ||
-    std::is_constructible_v<T, const std::optional<U>&&>;
+    std::is_constructible_v<T, my::optional<U>&> ||
+    std::is_constructible_v<T, const my::optional<U>&> ||
+    std::is_constructible_v<T, my::optional<U>&&> ||
+    std::is_constructible_v<T, const my::optional<U>&&>;
 
 template<class T, class U>
 concept can_convert_to_optional =
-    std::is_convertible_v<std::optional<U>&, T> ||
-    std::is_convertible_v<const std::optional<U>&, T> ||
-    std::is_convertible_v<std::optional<U>&&, T> ||
-    std::is_convertible_v<const std::optional<U>&&, T>;
+    std::is_convertible_v<my::optional<U>&, T> ||
+    std::is_convertible_v<const my::optional<U>&, T> ||
+    std::is_convertible_v<my::optional<U>&&, T> ||
+    std::is_convertible_v<const my::optional<U>&&, T>;
 
 template<class T, class U>
 concept can_assign_from_optional =
-    std::is_assignable_v<T&, std::optional<U>&> ||
-    std::is_assignable_v<T&, const std::optional<U>&> ||
-    std::is_assignable_v<T&, std::optional<U>&&> ||
-    std::is_assignable_v<T&, const std::optional<U>&&>;
+    std::is_assignable_v<T&, my::optional<U>&> ||
+    std::is_assignable_v<T&, const my::optional<U>&> ||
+    std::is_assignable_v<T&, my::optional<U>&&> ||
+    std::is_assignable_v<T&, const my::optional<U>&&>;
 
 } // anonymous namespace
 
@@ -71,8 +76,9 @@ public:
     template <class U>
     constexpr optional(const optional<U> &other)
         requires std::is_constructible_v<T, const U &> &&
-                 (!can_construct_from_optional<T, U>) &&
-                 (!can_convert_to_optional<T, U>)
+                 ((is_bool<T>) ||
+                 ((!can_construct_from_optional<T, U>) &&
+                 (!can_convert_to_optional<T, U>)))
     : m_is_some{other.m_is_some} {
         if (m_is_some) {
             std::construct_at(std::addressof(m_some), other.m_some);
@@ -82,8 +88,9 @@ public:
     template <class U>
     constexpr optional(optional<U> &&other)
         requires std::is_constructible_v<T, U> &&
-                 (!can_construct_from_optional<T, U>) &&
-                 (!can_convert_to_optional<T, U>)
+                 ((is_bool<T>) ||
+                 ((!can_construct_from_optional<T, U>) &&
+                 (!can_convert_to_optional<T, U>)))
     : m_is_some{other.m_is_some} {
         if (m_is_some) {
             std::construct_at(std::addressof(m_some), std::move(other.m_some));
