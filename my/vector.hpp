@@ -4,6 +4,7 @@
 #include <memory>
 #include <print>
 #include <stdexcept>
+#include <cassert>
 #include "memory.hpp"
 #include "utility.hpp"
 
@@ -69,10 +70,10 @@ public:
     }
 
     template<class InputIt>
-    constexpr vector(InputIt first, InputIt last,
-            const Allocator& alloc = Allocator())
+    constexpr vector(InputIt first, InputIt last, const Allocator& alloc = Allocator())
+        requires std::input_iterator<InputIt>
     {
-        size_type count = std::distance(first, last);
+        size_type count = static_cast<size_type>(std::distance(first, last));
         m_alloc = alloc;
         m_st = m_alloc.allocate(count);
         m_sz = m_cap = count;
@@ -253,12 +254,14 @@ public:
     }
 
     constexpr iterator insert(const_iterator pos, const_reference value) {
-        size_type offset = std::distance(cbegin(), pos);
+        std::println("We are here!");
+        size_type offset = static_cast<size_type>(std::distance(cbegin(), pos));
+        assert((offset >= 0 && offset <= m_sz) && "Inserted position invalid");
         if (m_sz == m_cap) {
             size_type new_cap = (m_cap == 0) ? 1 : REALLOCATION_FACTOR * m_cap;
             pointer new_st = m_alloc.allocate(new_cap);
-            std::uninitialized_move(begin(), begin() + offset - 1, new_st);
-            std::construct_at(new_st+offset, value);
+            std::uninitialized_move(begin(), begin() + offset, new_st);
+            std::construct_at(new_st + offset, value);
             std::uninitialized_move(begin() + offset, end(), new_st + offset + 1);
             std::destroy(begin(), end());
             m_alloc.deallocate(m_st);
@@ -273,6 +276,98 @@ public:
         }
         m_sz++;
         return m_st + offset;
+    }
+
+    constexpr iterator insert(const_iterator pos, T&& value) {
+        size_type offset = static_cast<size_type>(std::distance(cbegin(), pos));
+        assert((offset >= 0 && offset <= m_sz) && "Inserted position invalid");
+        if (m_sz == m_cap) {
+            size_type new_cap = (m_cap == 0) ? 1 : REALLOCATION_FACTOR * m_cap;
+            pointer new_st = m_alloc.allocate(new_cap);
+            std::uninitialized_move(begin(), begin() + offset, new_st);
+            std::construct_at(new_st + offset, std::move(value));
+            std::uninitialized_move(begin() + offset, end(), new_st + offset + 1);
+            std::destroy(begin(), end());
+            m_alloc.deallocate(m_st);
+            m_st = new_st;
+            m_cap = new_cap;
+        } else if (pos == cend()) {
+            std::construct_at(end(), std::move(value));
+        } else {
+            std::construct_at(end(), std::move(back()));
+            std::move_backward(begin() + offset, end() - 1, end());
+            *(m_st + offset) = std::move(value);
+        }
+        m_sz++;
+        return m_st + offset;
+    }
+
+    iterator insert(const_iterator pos, size_type count, const T& value) {
+        if (count == 0)
+            return const_cast<iterator>(pos);
+        size_type offset = static_cast<size_type>(std::distance(cbegin(), pos));
+        assert((offset >= 0 && offset <= m_sz) && "Inserted position invalid");
+        if (m_sz + count > m_cap) {
+            size_type new_cap = (m_cap == 0) ? count : std::max(REALLOCATION_FACTOR * m_cap, m_cap + count);
+            pointer new_st = m_alloc.allocate(new_cap);
+            std::uninitialized_move(begin(), begin() + offset, new_st);
+            std::uninitialized_fill_n(new_st + offset, count, value);
+            std::uninitialized_move(begin() + offset, end(), new_st + offset + count);
+            std::destroy(begin(), end());
+            m_alloc.deallocate(m_st);
+            m_st = new_st;
+            m_cap = new_cap;
+        } else if (offset + count >= m_sz) {
+            size_type first_seg =  static_cast<size_type>(std::distance(pos, cend()));
+            std::uninitialized_move(begin() + offset, end(), begin() + offset + count);
+            std::fill_n(begin() + offset, first_seg, value);
+            std::uninitialized_fill_n(end(), count - first_seg, value);
+        } else {
+            std::uninitialized_move(begin() + offset + count, end(), end());
+            std::move_backward(begin() + offset, begin() + offset + count, end());
+            std::fill_n(begin() + offset, count, value);
+        }
+        m_sz += count;
+        return m_st + offset;
+    }
+
+    template<class InputIt>
+    iterator insert(const_iterator pos, InputIt first, InputIt last)
+        requires std::input_iterator<InputIt>
+    {
+        if (first == last)
+            return const_cast<iterator>(pos);
+        size_type count = static_cast<size_type>(std::distance(first, last));
+        size_type offset = static_cast<size_type>(std::distance(cbegin(), pos));
+        assert((offset >= 0 && offset <= m_sz) && "Inserted position invalid");
+
+        if (m_sz + count > m_cap) {
+            size_type new_cap = (m_cap == 0) ? count : std::max(REALLOCATION_FACTOR * m_cap, m_cap + count);
+            pointer new_st = m_alloc.allocate(new_cap);
+            std::uninitialized_move(begin(), begin() + offset, new_st);
+            std::uninitialized_copy(first, last, new_st + offset);
+            std::uninitialized_move(begin() + offset, end(), new_st + offset + count);
+            std::destroy(begin(), end());
+            m_alloc.deallocate(m_st);
+            m_st = new_st;
+            m_cap = new_cap;
+        } else if (offset + count >= m_sz) {
+            size_type first_seg =  static_cast<size_type>(std::distance(pos, cend()));
+            std::uninitialized_move(begin() + offset, end(), begin() + offset + count);
+            std::copy_n(first, first_seg, begin() + offset);
+            std::uninitialized_copy(first + first_seg, last, end());
+        } else {
+            std::println("offset={}, count={}", offset, count);
+            std::uninitialized_move(end() - count, end(), end());
+            std::move_backward(begin() + offset,end() - count, end());
+            std::copy(first, last, begin() + offset);
+        }
+        m_sz += count;
+        return m_st + offset;
+    }
+
+    iterator insert(const_iterator pos, std::initializer_list<T> ilist) {
+        return insert(pos, ilist.begin(), ilist.end());
     }
 
     constexpr void push_back(const_reference value) { emplace_back(value); }
