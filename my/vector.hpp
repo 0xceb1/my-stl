@@ -55,10 +55,7 @@ public:
     }
 
     explicit vector(size_type count, const Allocator& alloc = Allocator()) :
-        m_st{nullptr}, m_sz{count}, m_cap{count}, m_alloc(alloc)
-    {
-        m_st = m_alloc.allocate(count);
-    }
+        vector(count, T(), alloc) {}
 
     constexpr vector(size_type count, const T& value,
         const Allocator& alloc = Allocator())
