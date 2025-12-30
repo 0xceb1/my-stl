@@ -36,6 +36,7 @@ concept can_assign_from_optional =
 } // anonymous namespace
 
 template <class T> class optional {
+template <class U> friend class optional;
 public:
     using value_type = T;
 
@@ -45,21 +46,23 @@ private:
         T m_some;
     };
     bool m_is_some;
-
-
 public:
     // constructors
     constexpr optional() noexcept : m_is_some{false} {}
 
     constexpr optional(std::nullopt_t) noexcept : m_is_some{false} {}
 
-    constexpr optional(const optional &other) : m_is_some{other.m_is_some} {
+    constexpr optional(const optional &other)
+        requires std::is_copy_constructible_v<T>
+    : m_is_some{other.m_is_some} {
         if (m_is_some) {
             std::construct_at(std::addressof(m_some), other.m_some);
         }
     }
 
-    constexpr optional(optional &&other) noexcept : m_is_some{other.m_is_some} {
+    constexpr optional(optional &&other) noexcept
+        requires std::is_move_constructible_v<T>
+    : m_is_some{other.m_is_some} {
         if (m_is_some) {
             std::construct_at(std::addressof(m_some), std::move(other.m_some));
         }

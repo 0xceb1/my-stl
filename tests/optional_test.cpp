@@ -6,7 +6,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include "my/optional.hpp"
 
-using std::optional;
+using my::optional;
 using std::string;
 using std::vector;
 using MaybeStr = optional<string>;
