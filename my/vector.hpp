@@ -314,13 +314,12 @@ public:
             m_st = new_st;
             m_cap = new_cap;
         } else if (offset + count >= m_sz) {
-            size_type first_seg =  static_cast<size_type>(std::distance(pos, cend()));
             std::uninitialized_move(begin() + offset, end(), begin() + offset + count);
-            std::fill_n(begin() + offset, first_seg, value);
-            std::uninitialized_fill_n(end(), count - first_seg, value);
+            std::fill_n(begin() + offset, m_sz - offset, value);
+            std::uninitialized_fill_n(end(), count + offset - m_sz, value);
         } else {
-            std::uninitialized_move(begin() + offset + count, end(), end());
-            std::move_backward(begin() + offset, begin() + offset + count, end());
+            std::uninitialized_move(end() - count, end(), end());
+            std::move_backward(begin() + offset, end() - count, end());
             std::fill_n(begin() + offset, count, value);
         }
         m_sz += count;
@@ -348,12 +347,10 @@ public:
             m_st = new_st;
             m_cap = new_cap;
         } else if (offset + count >= m_sz) {
-            size_type first_seg =  static_cast<size_type>(std::distance(pos, cend()));
             std::uninitialized_move(begin() + offset, end(), begin() + offset + count);
-            std::copy_n(first, first_seg, begin() + offset);
-            std::uninitialized_copy(first + first_seg, last, end());
+            std::copy_n(first, m_sz - offset, begin() + offset);
+            std::uninitialized_copy(std::next(first, m_sz - offset), last, end());
         } else {
-            std::println("offset={}, count={}", offset, count);
             std::uninitialized_move(end() - count, end(), end());
             std::move_backward(begin() + offset,end() - count, end());
             std::copy(first, last, begin() + offset);
