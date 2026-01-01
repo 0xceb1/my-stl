@@ -251,7 +251,6 @@ public:
     }
 
     constexpr iterator insert(const_iterator pos, const_reference value) {
-        std::println("We are here!");
         size_type offset = static_cast<size_type>(std::distance(cbegin(), pos));
         assert((offset >= 0 && offset <= m_sz) && "Inserted position invalid");
         if (m_sz == m_cap) {
@@ -398,4 +397,15 @@ public:
         }
     }
 }; // class vector
+
+template<class T, class Alloc>
+constexpr bool operator==(const vector<T, Alloc>& lhs, const vector<T, Alloc>& rhs) {
+    return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+}
+
+template<class T, class Alloc>
+constexpr bool operator<=>(const vector<T, Alloc>& lhs, const vector<T, Alloc>& rhs) {
+    return std::lexicographical_compare_three_way(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+}
+
 } // namespace my
