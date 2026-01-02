@@ -131,7 +131,7 @@ public:
     using element_type = T;
     using deleter_type = D;
 private:
-    compressed_pair<D, T> m_pair;
+    compressed_pair<D, T*> m_pair;
     using A = std::remove_reference_t<D>;
 public:
     constexpr unique_ptr() noexcept
