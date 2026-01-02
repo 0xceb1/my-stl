@@ -19,4 +19,5 @@ A partial implementation of C++ standard template library under C++23 standard. 
 | `std::ranges::find`         |    [ ]   |
 | `std::ranges::fold_left`    |    [ ]   |
 | `std::jthread`              |    [ ]   |
+| `std::generatror`           |    [ ]   |
 
