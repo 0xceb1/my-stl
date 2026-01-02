@@ -95,8 +95,8 @@ public:
 };
 
 template<class D, class T>
-    requires std::is_empty_v<D> && !std::is_final_v<D>
-class compressed_pair : private D {
+    requires std::is_empty_v<D> && (!std::is_final_v<D>)
+class compressed_pair<D, T> : private D {
 public:
     T second;
 
@@ -150,13 +150,13 @@ public:
          requires (std::is_constructible_v<D, decltype(d)>) &&
                   (std::constructible_from<D, const A&>) && 
                   (!std::is_reference_v<D> ? std::is_nothrow_copy_constructible_v<D> : true)
-    : m_pair{one_then_variadic_arg_t, std::forward<decltype(d)>(d), p} {}
+    : m_pair{one_then_variadic_arg_t(), std::forward<decltype(d)>(d), p} {}
 
     constexpr unique_ptr(pointer p, A&& d) noexcept
          requires (std::is_constructible_v<D, decltype(d)>) &&
                   (std::constructible_from<D, A&&>) &&
                   (!std::is_reference_v<D>) &&
                   (std::is_nothrow_move_constructible_v<D>)
-    : m_pair{one_then_variadic_arg_t, std::forward<decltype(d)>(d), p} {}
+    : m_pair{one_then_variadic_arg_t(), std::forward<decltype(d)>(d), p} {}
 };
 } // namespace my
