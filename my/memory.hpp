@@ -134,6 +134,8 @@ private:
     compressed_pair<D, T*> m_pair;
     using A = std::remove_reference_t<D>;
 public:
+
+    // Constructors
     constexpr unique_ptr() noexcept
         requires unique_ptr_enable_default_t<D>
     : m_pair{zero_then_variadic_arg_t()} {}
@@ -146,6 +148,7 @@ public:
         requires unique_ptr_enable_default_t<D>
     : m_pair{zero_then_variadic_arg_t(), p} {}
 
+    // TODO: why we need these specifications:
     constexpr unique_ptr(pointer p, const A& d) noexcept
          requires (std::is_constructible_v<D, decltype(d)>) &&
                   (std::constructible_from<D, const A&>) && 
@@ -158,5 +161,47 @@ public:
                   (!std::is_reference_v<D>) &&
                   (std::is_nothrow_move_constructible_v<D>)
     : m_pair{one_then_variadic_arg_t(), std::forward<decltype(d)>(d), p} {}
-};
+
+    // move constructor
+    constexpr unique_ptr(unique_ptr&& u) noexcept
+        requires is_move_constructible_v<D>;
+
+    template<class U, class E>
+    constexpr unique_ptr(unique_ptr<U, E>&& u) noexcept;
+
+    // Modifiers
+    constexpr pointer release() noexcept {
+        return std::exchange(m_pair.get_second(), nullptr);
+    }
+
+    void reset(pointer ptr = pointer()) noexcept {
+        auto old_ptr = std::exchange(m_pair.get_second(), ptr);
+        if (old_ptr) {
+           get_deleter()(old_ptr);
+        }
+    }
+
+    void swap(unique_ptr& other) noexcept {
+        if (*this != &other) {
+            std::swap(m_pair, other.m_pair);
+        }
+    }
+
+    // Observers
+    constexpr pointer get() const noexcept {
+        return m_pair.get_second();
+    }
+
+    constexpr D& get_deleter() noexcept {
+        return m_pair.get_first();
+    }
+
+    constexpr const D& get_deleter() const noexcept {
+        return m_pair.get_first();
+    }
+
+    constexpr explicit operator bool() const noexcept {
+        return get() != nullptr;
+    }
+}; // class unique_ptr
 } // namespace my
