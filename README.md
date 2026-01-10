@@ -12,7 +12,7 @@ A partial implementation of C++ standard template library under C++23 standard. 
 | `std::unordered_map`        |    [ ]   |
 | `std::string`               |    [ ]   |
 | `std::string_view`          |    [ ]   |
-| `std::unique_ptr`           |    [ ]   |
+| `std::unique_ptr`           |    [x]   |
 | `std::optional`             |    [x]   |
 | `std::expected`             |    [ ]   |
 | `std::ranges::sort`         |    [ ]   |

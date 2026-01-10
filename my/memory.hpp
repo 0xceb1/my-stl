@@ -255,4 +255,48 @@ public:
         return get();
     }
 }; // class unique_ptr
+
+// Non-member functions for unique_ptr
+template<class T, class... Args>
+constexpr unique_ptr<T> make_unique(Args&&... args)
+    requires (!std::is_array_v<T>)
+{
+    return unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
+template< class T >
+constexpr unique_ptr<T> make_unique_for_overwrite()
+    requires (!std::is_array_v<T>)
+{
+    return unique_ptr<T>(new T);
+}
+
+template<class T1, class D1, class T2, class D2>
+constexpr bool operator==(const unique_ptr<T1, D1>& x, const unique_ptr<T2, D2>& y) {
+    return x.get() == y.get();
+}
+
+template<class T1, class D1, class T2, class D2>
+    requires std::three_way_comparable_with<typename unique_ptr<T1, D1>::pointer,
+                                            typename unique_ptr<T2, D2>::pointer>
+constexpr std::compare_three_way_result_t<typename unique_ptr<T1, D1>::pointer,
+                                          typename unique_ptr<T2, D2>::pointer>
+    operator<=>(const unique_ptr<T1, D1>& x, const unique_ptr<T2, D2>& y)
+{
+    return std::compare_three_way{}(x.get(), y.get());
+}
+
+template<class T, class D>
+constexpr bool operator==(const unique_ptr<T, D>& x, std::nullptr_t) noexcept {
+    return !x;
+}
+
+template<class T, class D>
+    requires std::three_way_comparable<typename unique_ptr<T, D>::pointer>
+constexpr std::compare_three_way_result_t<typename unique_ptr<T, D>::pointer>
+    operator<=>(const unique_ptr<T, D>& x, std::nullptr_t)
+{
+    return std::compare_three_way{}(x.get(), static_cast<typename unique_ptr<T, D>::pointer>(nullptr));
+}
+
 } // namespace my
