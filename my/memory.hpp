@@ -164,10 +164,29 @@ public:
 
     // move constructor
     constexpr unique_ptr(unique_ptr&& u) noexcept
-        requires is_move_constructible_v<D>;
-
+        requires is_move_constructible_v<D>
+    = default;
+    
     template<class U, class E>
-    constexpr unique_ptr(unique_ptr<U, E>&& u) noexcept;
+    constexpr unique_ptr(unique_ptr<U, E>&& u) noexcept
+        requires (std::is_convertible_v<unique_ptr<U, E>::pointer, pointer>) &&
+                 (!std::is_array_v<U>) &&
+                 ((std::is_reference_v<D> && std::same_as<E, D>) ||
+                 (!std::is_reference_v<D> && std::convertible_to<E, D>))
+    : m_pair{one_then_variadic_arg_t(),
+             u.release(),
+             std::forward<E>(u.get_deleter())} {}
+
+    // disable copy ctor & copy assign operator
+    unique_ptr(const unique_ptr&) = delete;
+    unique_ptr& operator=(const unique_ptr&) = delete;
+
+    // dtor
+    constexpr ~unique_ptr() {
+        if (get() != nullptr) {
+            get_deleter()(get());
+        }
+    }
 
     // Modifiers
     constexpr pointer release() noexcept {
