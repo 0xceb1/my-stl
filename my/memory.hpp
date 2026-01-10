@@ -169,7 +169,7 @@ public:
     
     template<class U, class E>
     constexpr unique_ptr(unique_ptr<U, E>&& u) noexcept
-        requires (std::is_convertible_v<unique_ptr<U, E>::pointer, pointer>) &&
+        requires (std::is_convertible_v<typename unique_ptr<U, E>::pointer, pointer>) &&
                  (!std::is_array_v<U>) &&
                  ((std::is_reference_v<D> && std::same_as<E, D>) ||
                  (!std::is_reference_v<D> && std::convertible_to<E, D>))
@@ -187,7 +187,7 @@ public:
 
     template<class U, class E>
     unique_ptr& operator=(unique_ptr<U, E>&& r) noexcept
-        requires (std::is_convertible_v<unique_ptr<U, E>::pointer, pointer>) &&
+        requires (std::is_convertible_v<typename unique_ptr<U, E>::pointer, pointer>) &&
                  (!std::is_array_v<U>) &&
                  (std::is_assignable_v<D&, E&&>)
     {
@@ -245,6 +245,14 @@ public:
 
     constexpr explicit operator bool() const noexcept {
         return get() != nullptr;
+    }
+
+    constexpr T& operator*() const noexcept {
+        return *get();
+    }
+
+    constexpr pointer operator->() const noexcept {
+        return get();
     }
 }; // class unique_ptr
 } // namespace my
