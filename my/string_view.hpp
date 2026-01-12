@@ -1,5 +1,7 @@
 #pragma once
+#include <concepts>
 #include <cstddef>
+#include <memory>
 #include <type_traits>
 #include <iterator>
 
@@ -31,7 +33,28 @@ public:
 private:
     const CharT* m_data;
     std::size_t  m_size;
+public:
+    constexpr basic_string_view() noexcept
+    : m_data{nullptr}, m_size{0} {}
 
+    constexpr basic_string_view(const basic_string_view& other) noexcept = default;
+    constexpr basic_string_view(const CharT* s, size_type count)
+    : m_data{s}, m_size{count} {}
+
+    constexpr basic_string_view(const CharT* s)
+    : m_data{s}, m_size{Traits::length(s)} {}
+
+    template<std::contiguous_iterator It, std::sized_sentinel_for<It> End>
+        requires (std::same_as<CharT, std::iter_value_t<It>>) &&
+                 (!std::convertible_to<End, size_type>)
+    constexpr basic_string_view(It first, End last) 
+    : m_data{std::to_address(first)}, m_size{last - first} {}
+
+    basic_string_view(std::nullptr_t) = delete;
+
+    constexpr basic_string_view& operator=(const basic_string_view& view) noexcept = default;
+
+    
 }; // class basic_string_view
 
 using string_view = basic_string_view<char>;
