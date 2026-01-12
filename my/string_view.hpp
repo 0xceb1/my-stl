@@ -149,6 +149,20 @@ public:
         return m_size == 0;
     }
 
+    constexpr void remove_prefix(size_type n) {
+        m_data += n;
+        m_size -= n;
+    }
+
+    constexpr void remove_suffix(size_type n) {
+        m_size -= n;
+    }
+
+    constexpr void swap(basic_string_view& v) noexcept {
+        auto tmp = *this;
+        *this = v;
+        v = tmp;
+    }
 }; // class basic_string_view
 
 using string_view = basic_string_view<char>;
