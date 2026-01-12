@@ -165,7 +165,9 @@ public:
     // move constructor
     constexpr unique_ptr(unique_ptr&& u) noexcept
         requires std::is_move_constructible_v<D>
-    = default;
+    : m_pair{one_then_variadic_arg_t(),
+             std::forward<D>(u.get_deleter()),
+             u.release()} {}
     
     template<class U, class E>
     constexpr unique_ptr(unique_ptr<U, E>&& u) noexcept
@@ -174,8 +176,8 @@ public:
                  ((std::is_reference_v<D> && std::same_as<E, D>) ||
                  (!std::is_reference_v<D> && std::convertible_to<E, D>))
     : m_pair{one_then_variadic_arg_t(),
-             u.release(),
-             std::forward<E>(u.get_deleter())} {}
+             std::forward<E>(u.get_deleter()),
+             u.release()} {}
 
     unique_ptr& operator=(unique_ptr&& r) noexcept
         requires std::is_move_assignable_v<D>
@@ -225,7 +227,7 @@ public:
     }
 
     void swap(unique_ptr& other) noexcept {
-        if (*this != &other) {
+        if (*this != other) {
             std::swap(m_pair, other.m_pair);
         }
     }
