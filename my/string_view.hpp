@@ -1,7 +1,9 @@
 #pragma once
 #include <concepts>
 #include <cstddef>
+#include <format>
 #include <memory>
+#include <stdexcept>
 #include <type_traits>
 #include <iterator>
 
@@ -54,7 +56,99 @@ public:
 
     constexpr basic_string_view& operator=(const basic_string_view& view) noexcept = default;
 
-    
+    [[nodiscard]]
+    constexpr const_iterator begin() const noexcept {
+      return m_data;
+    }
+
+    [[nodiscard]]
+    constexpr const_iterator end() const noexcept {
+      return m_data + m_size;
+    }
+
+    [[nodiscard]]
+    constexpr const_iterator cbegin() const noexcept {
+      return m_data;
+    }
+
+    [[nodiscard]]
+    constexpr const_iterator cend() const noexcept {
+      return m_data + m_size;
+    }
+
+    [[nodiscard]]
+    constexpr const_reverse_iterator rbegin() const noexcept {
+      return std::const_reverse_iterator(end());
+    }
+
+    [[nodiscard]]
+    constexpr const_reverse_iterator rend() const noexcept {
+      return std::const_reverse_iterator(begin());
+    }
+
+    [[nodiscard]]
+    constexpr const_reverse_iterator crbegin() const noexcept {
+      return std::const_reverse_iterator(end());
+    }
+
+    [[nodiscard]]
+    constexpr const_reverse_iterator crend() const noexcept {
+      return std::const_reverse_iterator(begin());
+    }
+
+    [[nodiscard]]
+    constexpr const_reference operator[](size_type pos) const {
+        return m_data[pos];
+    }
+
+    [[nodiscard]]
+    constexpr const_reference at(size_type pos) const {
+        if (pos >= m_size) {
+            throw std::out_of_range(
+                std::format("basic_string_view::at out of range: {} >= {}",
+                            pos, m_size)
+            );
+        }
+        return m_data[pos];
+    }
+
+    [[nodiscard]]
+    constexpr const_reference front() const {
+        return m_data[0];
+    }
+
+    [[nodiscard]]
+    constexpr const_reference back() const {
+        return m_data[m_size - 1];
+    }
+
+    [[nodiscard]]
+    constexpr const_pointer data() const noexcept {
+        return m_data
+    }
+
+    [[nodiscard]]
+    constexpr size_type size() const noexcept {
+        return m_size;
+    }
+
+    [[nodiscard]]
+    constexpr size_type length() const noexcept {
+        return m_size;
+    }
+
+    [[nodiscard]]
+    constexpr size_type max_size() const noexcept {
+        return (npos - sizeof(size_type) - sizeof(void*))
+                / sizeof(value_type)
+                / 2;
+    }
+
+    [[nodiscard]]
+    constexpr bool empty() const noexcept {
+        return m_size == 0;
+    }
+
 }; // class basic_string_view
 
 using string_view = basic_string_view<char>;
