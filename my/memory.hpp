@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <type_traits>
 #include <concepts>
+#include <memory>
 #include <utility>
 #include "utility.hpp"
 
@@ -27,10 +28,10 @@ public:
         return static_cast<T*>(::operator new(n * sizeof(T)));
     }
 
-    constexpr std::allocation_result<T*, size_type>
-    allocate_at_least(size_type n) {
-        return { allocate(n), n };
-    }
+    // constexpr std::allocation_result<T*, size_type>
+    // allocate_at_least(size_type n) {
+    //     return { allocate(n), n };
+    // }
     
     constexpr void deallocate(T* p) {
         ::operator delete(p);
