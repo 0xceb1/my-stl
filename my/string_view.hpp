@@ -1,6 +1,7 @@
 #pragma once
 #include <concepts>
 #include <cstddef>
+#include <cstring>
 #include <format>
 #include <memory>
 #include <stdexcept>
@@ -105,7 +106,8 @@ public:
     constexpr const_reference at(size_type pos) const {
         if (pos >= m_size) {
             throw std::out_of_range(
-                std::format("basic_string_view::at out of range: {} >= {}",
+                std::format("basic_string_view::at out of range:"
+                            "pos (which is {}) >= this->size() (which is {})",
                             pos, m_size)
             );
         }
@@ -163,6 +165,94 @@ public:
         *this = v;
         v = tmp;
     }
+
+    constexpr size_type copy(CharT* dest, size_type count, size_type pos = 0) const {
+        if (pos >= m_size) {
+            throw std::out_of_range(
+                std::format("basic_string_view::copy out of range:"
+                            "pos (which is {}) >= this->size() (which is {})",
+                            pos, m_size)
+            );
+        }
+        size_type rcount = std::min<size_type>(count, m_size - pos);
+        // should use char_traits::copy
+        // return Traits::copy(dest, data() + pos, rcount);
+        std::memcpy(dest, data() + pos, rcount * sizeof(CharT));
+        return rcount;
+    }
+
+    constexpr basic_string_view substr(size_type pos = 0,
+                                       size_type count = npos) const
+    {
+        if (pos >= m_size) {
+            throw std::out_of_range(
+                std::format("basic_string_view::substr out of range:"
+                            "pos (which is {}) >= this->size() (which is {})",
+                            pos, m_size)
+            );
+        }
+        size_type rcount = std::min<size_type>(count, m_size - pos);
+        return basic_string_view{ m_data + pos, rcount };
+    }
+
+    constexpr int compare(basic_string_view v) const noexcept {
+        size_type rlen = std::min<size_type>(m_size, v.m_size);
+        int res = Traits::compare(m_data, v.m_data, rlen);
+        if (res == 0)
+            return static_cast<int>(m_size - v.m_size);
+        return res;
+    }
+
+    constexpr int compare(size_type pos1, size_type count1, basic_string_view v) const {
+        return substr(pos1, count1).compare(v);
+    }
+
+    constexpr int compare(size_type pos1, size_type count1, basic_string_view v,
+                          size_type pos2, size_type count2) const
+    {
+        return substr(pos1, count1).compare(v.substr(pos2, count2));
+    }
+
+    constexpr int compare(const CharT* s) const {
+        return compare(basic_string_view {s});
+    }
+
+    constexpr int compare(size_type pos1, size_type count1, const CharT* s) const {
+        return substr(pos1, count1).compare(basic_string_view {s});
+    }
+
+    constexpr int compare(size_type pos1, size_type count1,
+                          const CharT* s, size_tyoe count2) const
+    {
+        return substr(pos1, count1).compare(basic_string_view(s, count2));
+    }
+
+    constexpr bool starts_with(basic_string_view sv) const noexcept {
+        return m_size >= sv.m_size &&
+            compare(0, sv.m_size, sv) == 0;
+    }
+
+    constexpr bool starts_with(CharT ch) const noexcept {
+        return !empty() && Traits::eq(front(), ch);
+    }
+
+    constexpr bool starts_with(const CharT* s) const {
+        return starts_with(basic_string_view(s));
+    }
+
+    constexpr bool ends_with(basic_string_view sv) const noexcept {
+        return m_size >= sv.m_size &&
+            compare(m_size - sv.m_size, sv.m_size, sv) == 0;
+    }
+
+    constexpr bool ends_with(CharT ch) const noexcept {
+        return !empty() && Traits::eq(back(), ch);
+    }
+
+    constexpr bool ends_with(const CharT* s) const {
+        return ends_with(basic_string_view(s));
+    }
+
 }; // class basic_string_view
 
 using string_view = basic_string_view<char>;
