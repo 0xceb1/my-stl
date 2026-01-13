@@ -7,6 +7,9 @@
 #include <stdexcept>
 #include <type_traits>
 #include <iterator>
+#include <ranges>
+
+namespace stdv = std::ranges::views;
 
 namespace my {
 
@@ -14,7 +17,7 @@ template< class CharT, class Traits = std::char_traits<CharT>>
     requires (!std::is_array_v<CharT>) &&
              (std::is_trivially_copyable_v<CharT>) &&
              (std::is_trivially_default_constructible_v<CharT>) &&
-             (std::is_standard_layout<CharT>) &&
+             (std::is_standard_layout_v<CharT>) &&
              (std::is_same_v<CharT, typename Traits::char_type>)
 class basic_string_view {
 public:
@@ -79,22 +82,22 @@ public:
 
     [[nodiscard]]
     constexpr const_reverse_iterator rbegin() const noexcept {
-      return std::const_reverse_iterator(end());
+      return const_reverse_iterator(end());
     }
 
     [[nodiscard]]
     constexpr const_reverse_iterator rend() const noexcept {
-      return std::const_reverse_iterator(begin());
+      return const_reverse_iterator(begin());
     }
 
     [[nodiscard]]
     constexpr const_reverse_iterator crbegin() const noexcept {
-      return std::const_reverse_iterator(end());
+      return const_reverse_iterator(end());
     }
 
     [[nodiscard]]
     constexpr const_reverse_iterator crend() const noexcept {
-      return std::const_reverse_iterator(begin());
+      return const_reverse_iterator(begin());
     }
 
     [[nodiscard]]
@@ -126,7 +129,7 @@ public:
 
     [[nodiscard]]
     constexpr const_pointer data() const noexcept {
-        return m_data
+        return m_data;
     }
 
     [[nodiscard]]
@@ -222,7 +225,7 @@ public:
     }
 
     constexpr int compare(size_type pos1, size_type count1,
-                          const CharT* s, size_tyoe count2) const
+                          const CharT* s, size_type count2) const
     {
         return substr(pos1, count1).compare(basic_string_view(s, count2));
     }
@@ -255,5 +258,5 @@ public:
 
 }; // class basic_string_view
 
-using string_view = basic_string_view<char>;
+using string_view = my::basic_string_view<char>;
 } // namespace my
