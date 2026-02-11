@@ -11,7 +11,7 @@ A partial implementation of C++ standard template library under C++23 standard. 
 | `std::map`                  |    [ ]   |
 | `std::unordered_map`        |    [ ]   |
 | `std::string`               |    [ ]   |
-| `std::string_view`          |    [ ]   |
+| `std::string_view`          |    [x]   |
 | `std::unique_ptr`           |    [x]   |
 | `std::optional`             |    [x]   |
 | `std::expected`             |    [ ]   |
