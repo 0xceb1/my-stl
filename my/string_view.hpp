@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <type_traits>
 #include <iterator>
+#include <iostream>
 #include <ranges>
 
 namespace stdv = std::ranges::views;
@@ -56,6 +57,18 @@ public:
                  (!std::convertible_to<End, size_type>)
     constexpr basic_string_view(It first, End last) 
     : m_data{std::to_address(first)}, m_size{last - first} {}
+
+    template<class R>
+        requires (!std::is_same_v<std::remove_cvref_t<R>, basic_string_view>) &&
+                 (std::ranges::contiguous_range<R>) &&
+                 (std::ranges::sized_range<R>) &&
+                 (std::is_same_v<std::ranges::range_value_t<R>, CharT>) &&
+                 (!std::is_convertible_v<R, const CharT*>) &&
+                 (!requires(std::remove_cvref_t<R>& d) {
+                     d.operator basic_string_view<CharT, Traits>();
+                 })
+    constexpr explicit basic_string_view(R&& r)
+    : m_data{std::ranges::data(r)}, m_size{std::ranges::size(r)} {}
 
     basic_string_view(std::nullptr_t) = delete;
 
@@ -421,5 +434,24 @@ constexpr auto operator<=>(
     return cmp == 0 ? lhs.size() <=> rhs.size() : cmp <=> 0;
 }
 
+template<class CharT, class Traits>
+std::basic_ostream<CharT, Traits>&
+    operator<<(std::basic_ostream<CharT, Traits>& os,
+                basic_string_view<CharT, Traits> v)
+{
+    return os.write(v.data(), v.size()); // naive implementation
+}
+
+
 using string_view = my::basic_string_view<char>;
 } // namespace my
+
+namespace std::ranges {
+template<class CharT, class Traits>
+inline constexpr bool
+    enable_borrowed_range<my::basic_string_view<CharT, Traits>> = true;
+
+template<class CharT, class Traits>
+inline constexpr bool
+    enable_view<my::basic_string_view<CharT, Traits>> = true;
+} // namespace std::ranges
