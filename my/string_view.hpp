@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <concepts>
 #include <cstddef>
 #include <cstring>
@@ -405,8 +406,19 @@ public:
 
 template<class CharT, class Traits>
 constexpr bool operator==(basic_string_view<CharT,Traits> lhs,
-                          basic_string_view<CharT,Traits> rhs) noexcept {
-    
+                          std::type_identity_t<basic_string_view<CharT, Traits>> rhs) noexcept
+{
+    return lhs.size() == rhs.size() &&
+           Traits::compare(lhs.data(), rhs.data(), lhs.size()) == 0;
+}
+
+template<class CharT, class Traits>
+constexpr auto operator<=>(
+    basic_string_view<CharT, Traits> lhs,
+    std::type_identity_t<basic_string_view<CharT, Traits>> rhs) noexcept
+{
+    const int cmp = Traits::compare(lhs.data(), rhs.data(), std::min(lhs.size(), rhs.size()));
+    return cmp == 0 ? lhs.size() <=> rhs.size() : cmp <=> 0;
 }
 
 using string_view = my::basic_string_view<char>;

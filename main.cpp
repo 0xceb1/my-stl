@@ -1,14 +1,20 @@
+#include <algorithm>
 #include <memory>
 #include <print>
+#include <ranges>
 #include <string>
+#include <string_view>
 #include <vector>
 #include <cassert>
 #include "my/memory.hpp"
 #include "my/utility.hpp"
 #include "my/vector.hpp"
 #include "my/optional.hpp"
+#include "my/string_view.hpp"
 
 using std::println;
+namespace stdr = std::ranges;
+namespace stdv = std::ranges::views;
 
 void test_allocator(void);
 void test_pair(void);
@@ -19,7 +25,10 @@ int main(void) {
     // test_allocator();
     // test_pair();
     // test_vector();
-    test_optional();
+    // test_optional();
+    constexpr my::string_view str {"123456789"};
+    static_assert(str == "123456789");
+    static_assert(str > "1234567");
 }
 
 void test_allocator(void) {
